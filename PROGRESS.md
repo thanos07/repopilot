@@ -1,4 +1,4 @@
-﻿# Implementation checklist
+# Implementation checklist
 
 - [x] Source audit and approved architecture
 - [x] Separate RepoPilot codebase
@@ -18,8 +18,10 @@
 - [x] Frontend production build
 - [x] Docker, Render blueprint, CI and setup documentation
 - [x] Live DeepSeek request with actual credentials
-- [ ] Live E2B template and cleanup verification
-- [ ] PostgreSQL/Redis/worker integration in deployment
+- [x] Custom E2B template built; sandbox smoke test and live task verification passed.
+- [ ] Independently confirm sandbox cleanup after successful and failed runs.
+- [x] Local PostgreSQL migration completed; Redis and Celery supported the live publishing workflow.
+- [ ] Validate PostgreSQL, Redis, and Celery in a hosted deployment.
 - [x] Live GitHub App branch/PR integration
 - [ ] Live agent evaluation results and baseline comparisons
 - [ ] Full backend deployment activation
@@ -27,7 +29,7 @@
 
 The static product preview and synthetic examples are explicitly separate from live execution.
 
-## Student budget update â€” 2026-09-11
+## Student budget update - 2026-09-11
 
 - [x] New-task API estimate cap lowered to $0.05; 12 turns, 24 tools, four verification attempts.
 - [x] Cumulative per-account recorded API allowance defaults to $4.00, checked before model calls; response limit 2,048 tokens.
@@ -36,7 +38,7 @@ The static product preview and synthetic examples are explicitly separate from l
 - [x] Migration and local upgrade/recruiter explanation included in README.
 - [x] First successful demo task recorded approximately $0.00215 in estimated model usage; sandbox charges excluded.
 
-## First live workflow completed — 2026-09-11
+## First live workflow completed - 2026-09-11
 
 - Built the custom E2B Python/pytest template and passed a sandbox smoke test.
 - Demo task reported 6 passing tests, compared with 2 passing and 2 failing before the fix.
