@@ -1,0 +1,14 @@
+{
+  "id": "casefold",
+  "kind": "synthetic",
+  "issue": "Normalize surrounding whitespace and case.",
+  "files": {
+    "app.py": "def normalize(text):\n    return text.lower()\n"
+  },
+  "acceptance_tests": {
+    "test_acceptance.py": "from app import normalize\ndef test_normalize():\n    assert normalize(\" Hello \") == \"hello\"\n    assert normalize(\"Stra\u00dfe\") == \"strasse\"\n"
+  },
+  "reference_files": {
+    "app.py": "def normalize(text):\n    return text.strip().casefold()\n"
+  }
+}

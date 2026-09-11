@@ -1,0 +1,14 @@
+{
+  "id": "average-empty",
+  "kind": "synthetic",
+  "issue": "Return zero for the average of an empty list.",
+  "files": {
+    "app.py": "def average(values):\n    return sum(values) / len(values)\n"
+  },
+  "acceptance_tests": {
+    "test_acceptance.py": "from app import average\ndef test_average():\n    assert average([]) == 0\n    assert average([2, 4]) == 3\n"
+  },
+  "reference_files": {
+    "app.py": "def average(values):\n    return sum(values) / len(values) if values else 0\n"
+  }
+}

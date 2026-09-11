@@ -1,0 +1,14 @@
+{
+  "id": "coupon-repeat",
+  "kind": "synthetic",
+  "issue": "Reject repeated redemption with ValueError.",
+  "files": {
+    "app.py": "def redeem(coupon):\n    coupon[\"redeemed\"] = True\n    return coupon\n"
+  },
+  "acceptance_tests": {
+    "test_acceptance.py": "import pytest\nfrom app import redeem\ndef test_redemption():\n    coupon = {\"redeemed\": False}\n    redeem(coupon)\n    with pytest.raises(ValueError):\n        redeem(coupon)\n"
+  },
+  "reference_files": {
+    "app.py": "def redeem(coupon):\n    if coupon.get(\"redeemed\"):\n        raise ValueError(\"Already redeemed\")\n    coupon[\"redeemed\"] = True\n    return coupon\n"
+  }
+}

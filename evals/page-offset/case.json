@@ -1,0 +1,14 @@
+{
+  "id": "page-offset",
+  "kind": "synthetic",
+  "issue": "Page numbers start at one. Return the correct slice.",
+  "files": {
+    "app.py": "def page(values, number, size):\n    return values[number * size:(number + 1) * size]\n"
+  },
+  "acceptance_tests": {
+    "test_acceptance.py": "from app import page\ndef test_page():\n    assert page([0, 1, 2, 3], 1, 2) == [0, 1]\n    assert page([0, 1, 2, 3], 2, 2) == [2, 3]\n"
+  },
+  "reference_files": {
+    "app.py": "def page(values, number, size):\n    return values[(number - 1) * size:number * size]\n"
+  }
+}

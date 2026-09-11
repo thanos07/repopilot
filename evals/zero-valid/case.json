@@ -1,0 +1,14 @@
+{
+  "id": "zero-valid",
+  "kind": "synthetic",
+  "issue": "Zero is a valid numeric value; only None is missing.",
+  "files": {
+    "app.py": "def present(value):\n    return bool(value)\n"
+  },
+  "acceptance_tests": {
+    "test_acceptance.py": "from app import present\ndef test_present():\n    assert present(0) is True\n    assert present(None) is False\n"
+  },
+  "reference_files": {
+    "app.py": "def present(value):\n    return value is not None\n"
+  }
+}

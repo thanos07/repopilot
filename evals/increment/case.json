@@ -1,0 +1,14 @@
+{
+  "id": "increment",
+  "kind": "synthetic",
+  "issue": "Increment an integer by one.",
+  "files": {
+    "app.py": "def increment(x):\n    return x\n"
+  },
+  "acceptance_tests": {
+    "test_acceptance.py": "from app import increment\ndef test_increment():\n    assert increment(1) == 2\n    assert increment(-1) == 0\n"
+  },
+  "reference_files": {
+    "app.py": "def increment(x):\n    return x + 1\n"
+  }
+}

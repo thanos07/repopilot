@@ -1,0 +1,14 @@
+{
+  "id": "max-negative",
+  "kind": "synthetic",
+  "issue": "Find the maximum in nonempty lists including negative values.",
+  "files": {
+    "app.py": "def maximum(values):\n    result = 0\n    for value in values:\n        result = max(result, value)\n    return result\n"
+  },
+  "acceptance_tests": {
+    "test_acceptance.py": "from app import maximum\ndef test_maximum():\n    assert maximum([-5, -2, -8]) == -2\n    assert maximum([0]) == 0\n"
+  },
+  "reference_files": {
+    "app.py": "def maximum(values):\n    return max(values)\n"
+  }
+}

@@ -1,0 +1,23 @@
+node_modules/
+.next/
+out/
+.env
+.env.local
+.venv/
+__pycache__/
+*.pyc
+*.sqlite3
+.pytest_cache/
+.sites-runtime/
+*.tsbuildinfo
+
+# Credentials and local backups
+.env.*
+!.env.example
+*.pem
+*.key
+*.sqlite3*
+*.log
+
+# Hosting configuration from the preview environment
+.openai/

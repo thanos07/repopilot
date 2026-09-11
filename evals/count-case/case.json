@@ -1,0 +1,14 @@
+{
+  "id": "count-case",
+  "kind": "synthetic",
+  "issue": "Count letters without distinguishing upper/lower case.",
+  "files": {
+    "app.py": "def counts(text):\n    result = {}\n    for letter in text:\n        result[letter] = result.get(letter, 0) + 1\n    return result\n"
+  },
+  "acceptance_tests": {
+    "test_acceptance.py": "from app import counts\ndef test_counts():\n    assert counts(\"AaB\") == {\"a\": 2, \"b\": 1}\n"
+  },
+  "reference_files": {
+    "app.py": "def counts(text):\n    result = {}\n    for letter in text.casefold():\n        result[letter] = result.get(letter, 0) + 1\n    return result\n"
+  }
+}

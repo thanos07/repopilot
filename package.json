@@ -1,0 +1,7 @@
+{
+  "name": "repopilot",
+  "private": true,
+  "scripts": {
+    "build": "npm --prefix frontend run build && node scripts/copy-export.mjs"
+  }
+}
