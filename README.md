@@ -2,9 +2,44 @@
 
 A cost-aware coding-agent workspace for small Python repositories. Inspect a plan, a code patch, verification evidence, and usage before approving a draft pull request.
 
+## Verified demo
+
+RepoPilot completed a small shopping-cart bug fix, ran verification, captured human approval, and published [demo draft PR #1](https://github.com/mdtnoor/repopilot-demo/pull/1) through its GitHub App.
+
+| Evidence | Observed result |
+| --- | --- |
+| Bug | Cart totals ignored item quantities |
+| Proposed change | Multiply integer-cent prices by quantities; add regression coverage |
+| Baseline tests | 2 passed, 2 failed |
+| Final tests reported by the sandbox | 6 passed |
+| Published patch | 2 files changed; 1 commit |
+| Recorded model cost estimate | Approximately $0.00215; E2B charges excluded |
+| Approval | Bound to the exact patch and base commit |
+| Sandbox cleanup | Passing and failing pytest runs both followed by E2B 404 responses for their sandbox IDs |
+
+These observations come from the September 2026 local demo. One successful task is not an agent success-rate benchmark. The test results came from E2B, not GitHub Actions on the demo repository.
+
+## Architecture
+
+```mermaid
+flowchart TD
+    UI["Next.js workspace"] --> API["Django API and session authentication"]
+    API --> DB[("PostgreSQL: tasks, patches, approvals, usage")]
+    API --> Q["Redis task queue"]
+    Q --> W["Celery worker and bounded agent loop"]
+    W --> DB
+    W --> M["DeepSeek API: code suggestions and tool calls"]
+    W --> S["Disposable E2B sandbox: fixed pytest runner"]
+    UI --> A["Human approves exact patch"]
+    A --> API
+    W --> G["GitHub App: branch and draft PR"]
+```
+
+The model selects from a bounded tool registry. The controller applies edits, checks budgets and approval state, and controls execution and publication.
+
 ## Current status
 
-This is the initial implementation, not a production-certified autonomous engineering service.
+Working local prototype with a verified end-to-end demo. Hosted deployment and broader reliability evaluation remain pending.
 
 | Capability | Status |
 | --- | --- |
@@ -14,14 +49,30 @@ This is the initial implementation, not a production-certified autonomous engine
 | Django session authentication, CSRF, ownership, task models | Implemented; local tests passed |
 | Pydantic tool registry and bounded coding loop | Implemented; scripted provider/verifier tests passed |
 | Persisted patches, final verification, exact-patch approval | Implemented; local tests passed |
-| DeepSeek provider and usage/cost estimates | Implemented; live API integration not exercised |
-| E2B network-disabled verification adapter | Implemented; SDK signatures inspected, live sandbox not exercised |
-| GitHub App draft PR publisher | Implemented; remote integration not exercised |
-| PostgreSQL/Celery/Redis deployment | Configuration supplied; production integration not exercised |
+| DeepSeek provider and usage/cost estimates | Verified in the local shopping-cart demo |
+| E2B network-disabled verification adapter | Live verification passed; cleanup confirmed after passing and failing pytest runs |
+| GitHub App draft PR publisher | Created the demo branch and draft PR after approval |
+| PostgreSQL/Celery/Redis | Local integration verified; hosted deployment not verified |
+| Readable API errors | Implemented; production build and mocked response checks passed |
+| Windows/WSL startup launcher | Manually verified on the development machine |
 | Synthetic evaluation | 10 fixtures validated against broken/reference implementations; no agent success rate claimed |
 | Public multi-user arbitrary execution | Not enabled; v1 live runs/publishing require a staff operator |
 
 No fallback returns a pretend successful patch when a live call fails. No tool can merge, force-push, or run an arbitrary shell command.
+
+## Daily startup on Windows and WSL
+
+For an already configured installation, run from the project root in PowerShell:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-local.ps1
+```
+
+The launcher starts PostgreSQL and Redis in Ubuntu, then opens separate terminals for Django, Celery, and the Windows frontend. It expects Windows Node/npm and a Linux virtual environment at `~/repopilot-venv`. Enter your Ubuntu sudo password if prompted. Wait for each terminal to report readiness, then open http://localhost:3000.
+
+Stop existing development processes before launching. To shut down, press Ctrl+C in Celery and wait for it to stop, then stop Django and the frontend. PostgreSQL and Redis remain running. Starting Celery may resume queued tasks.
+
+This launcher does not install dependencies or migrate databases. New installations should follow the setup below.
 
 ## Local setup
 
@@ -55,6 +106,8 @@ cd backend
 ../.venv/bin/celery -A config worker --loglevel=info --concurrency=1
 ```
 
+For the Windows/WSL layout used by the launcher, create the Linux environment with `python3 -m venv ~/repopilot-venv`, install `backend/requirements.txt` with that environment's pip, and run Django and Celery using its executables. Install and configure PostgreSQL and Redis inside Ubuntu; the frontend uses Windows Node/npm. Set `DATABASE_URL` before running migrations if publishing is required. Keep backend credentials in `backend/.env` and the public API URL in `frontend/.env.local`.
+
 Windows: activate `.venv\Scripts\activate`; use WSL2 or Docker for the worker. The frontend can run normally on Windows.
 
 ## Live execution setup
@@ -65,7 +118,7 @@ Windows: activate `.venv\Scripts\activate`; use WSL2 or Docker for the worker. T
 4. Set `LIVE_EXECUTION_ENABLED=true` on the API and worker and restart them.
 5. Run one small repository task. Confirm baseline results, patch, final results, sandbox termination, and usage records before wider use.
 
-The API model identifier is configurable. On 2026-09-10 official DeepSeek docs specify `deepseek-flash`, serving V4.1 Flash. The legacy V4 identifier no longer guarantees the original model. Version 1 disables thinking explicitly; it does not display or persist private reasoning.
+The API model identifier is configurable. The verified local setup used `deepseek-flash`, configured for DeepSeek V4.1 Flash. Provider aliases and prices can change; check the provider documentation before selecting a model or setting cost rates. Version 1 disables thinking explicitly; it does not display or persist private reasoning.
 
 ## Execution design
 
@@ -111,6 +164,19 @@ python backend/manage.py evaluate_agent --username YOUR_USERNAME --limit 1 --out
 
 Acceptance tests are withheld from the agent and applied after its run. The output measures acceptance on these synthetic tests, latency, iterations, tool calls, API cost estimate, and cost per accepted task. A broader real-repository benchmark, one-shot comparison, and context-selection ablation remain future work.
 
+## Reusable live cleanup check
+
+From the project root in Ubuntu:
+
+```bash
+~/repopilot-venv/bin/python scripts/check_sandbox_cleanup.py
+~/repopilot-venv/bin/python scripts/check_sandbox_cleanup.py --live
+```
+
+Without `--live`, the script exits without creating sandboxes. With it, the script creates up to two billable E2B sandboxes, checks the expected passing/failing test outcomes, and confirms removal. It makes no DeepSeek calls and publishes nothing.
+
+Exit code 0 means both checks passed; 1 means a failure or inconclusive result; 2 means live execution was not requested. Fallback cleanup does not turn a failed check into a pass. Worker crashes, forced termination, and provider/network failures are not covered by the successful live checks.
+
 ## Deployment
 
 See [DEPLOYMENT.md](DEPLOYMENT.md) for Vercel, Render, PostgreSQL, Redis and E2B setup. `compose.yaml` supplies local API/worker/PostgreSQL/Redis services. The private Sites publication is a static, read-only product preview; it does not host Django or run code.
@@ -142,4 +208,9 @@ Use the local scripted tests and synthetic fixture checks during development; th
 
 To update an existing local installation, run `python backend/manage.py migrate` and restart the API and worker. The migration changes defaults for new tasks; existing tasks retain their recorded limits. Create a fresh task to use the student defaults. Add `AI_ACCOUNT_BUDGET=4.00` to your backend environment (it also defaults to 4.00 when omitted). Keep your existing credentials and database.
 
-Recruiter explanation: “I designed RepoPilot to operate within a student budget. It checks an estimated token allowance before each model call, enforces a five-cent task limit and a cumulative account limit, and bounds both tool calls and verification attempts. It persists patches and usage so a budget stop is inspectable. Reducing cost does not bypass final tests or human approval. These controls are implemented and tested locally; real-world cost per successful fix still needs live measurement.”
+Recruiter explanation: “I designed RepoPilot to operate within a student budget. It checks an estimated token allowance before each model call, enforces a five-cent task limit and a cumulative account limit, and bounds both tool calls and verification attempts. It persists patches and usage so a budget stop is inspectable. Reducing cost does not bypass final tests or human approval. These controls are implemented and tested locally; the first small demo recorded about $0.00215 in estimated model usage, excluding sandbox charges. Broader cost and reliability measurements remain pending.”
+
+## Development history
+
+See [PROGRESS.md](PROGRESS.md) for the checklist and the [merged pull requests](https://github.com/thanos07/repopilot/pulls?q=is%3Apr+is%3Amerged) for incremental changes, reviews, and CI results.
+
