@@ -8,6 +8,7 @@ from coding_tasks.models import CodingTask,AgentRun
 from repositories.models import Repository
 from agent_engine.loop import execute_run
 from execution.sandbox import E2BVerifier
+from agent_engine.redaction import redact
 
 class Command(BaseCommand):
     help='Run paid live evaluation on synthetic local cases. Acceptance tests are withheld from the agent.'
@@ -53,6 +54,12 @@ class Command(BaseCommand):
         for path in selected:
             c=json.loads(path.read_text());task=CodingTask.objects.create(owner=user,repository=repo,title=c['issue'],description=c['issue']+' Add regression tests.',base_sha='0'*40,status='PREPARING')
             run=AgentRun.objects.create(task=task)
+            verification = {
+                'status': 'not_run', 'exit_code': None,
+                'stdout': '', 'stderr': '', 'duration_ms': None,
+            }
+            failure_reason = ''
+            phase = 'agent'
             try:
                 # One visible smoke test permits environment setup, but is not an acceptance oracle.
                 initial=c['files']|{'test_smoke.py':'import app\ndef test_import():\n    assert app is not None\n'}
@@ -61,13 +68,36 @@ class Command(BaseCommand):
                 candidate=c['files']|(patch.contents if patch else {})
                 # Withheld tests replace the agent's tests; do not give the oracle to its loop.
                 candidate={p:s for p,s in candidate.items() if not p.startswith('test')}
+                phase = 'verification'
                 verdict=E2BVerifier().verify(candidate|c['acceptance_tests'])
-                success=verdict.status=='passed';error='';run.state='COMPLETED'
-            except Exception as e:success=False;error=type(e).__name__;run.state='FAILED'
+                verification = {
+                    'status': verdict.status,
+                    'exit_code': verdict.exit_code,
+                    'stdout': redact(verdict.stdout)[:16000],
+                    'stderr': redact(verdict.stderr)[:8000],
+                    'duration_ms': verdict.duration_ms,
+                }
+                success = verdict.status == 'passed' and verdict.exit_code == 0
+                error = ''
+                if not success:
+                    failure_reason = (
+                        'Withheld acceptance tests failed.'
+                        if verdict.status == 'failed'
+                        else 'Withheld verification did not complete successfully.'
+                    )
+                run.state='COMPLETED'
+            except Exception as e:
+                success=False;error=type(e).__name__;run.state='FAILED'
+                if phase == 'verification':
+                    verification['status'] = 'error'
+                    failure_reason = 'Withheld verification raised an exception.'
+                else:
+                    failure_reason = 'Agent execution raised an exception before withheld verification.'
+                # Exception messages can contain credentials; retain only the class name.
             from django.utils import timezone
             run.finished_at=timezone.now();run.save()
             cost=run.usage.aggregate(total=Sum('estimated_cost'))['total'] or 0
-            rows.append({'case':c['id'],'accepted':success,'error':error,'iterations':run.iteration,'tool_calls':run.tool_count,'api_cost_estimate':str(cost),'latency_seconds':(run.finished_at-run.started_at).total_seconds()})
+            rows.append({'case':c['id'],'accepted':success,'error':error,'failure_reason':failure_reason,'verification':verification,'iterations':run.iteration,'tool_calls':run.tool_count,'api_cost_estimate':str(cost),'latency_seconds':(run.finished_at-run.started_at).total_seconds()})
         successes=sum(r['accepted'] for r in rows);total=sum(float(r['api_cost_estimate']) for r in rows)
         Path(o['output']).write_text(json.dumps({'mode':'live synthetic evaluation','cases':rows,'acceptance_rate':successes/len(rows) if rows else None,'api_cost_per_accepted_task':total/successes if successes else None,'sandbox_cost_included':False},indent=2))
         self.stdout.write('Evaluation written. Acceptance rate measures only these synthetic tests.')
