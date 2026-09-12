@@ -1,7 +1,7 @@
 {
   "id": "casefold",
   "kind": "synthetic",
-  "issue": "Normalize surrounding whitespace and case.",
+  "issue": "Normalize text by removing surrounding whitespace and applying Unicode case folding for caseless matching. Preserve internal whitespace.",
   "files": {
     "app.py": "def normalize(text):\n    return text.lower()\n"
   },
