@@ -19,7 +19,8 @@
 - [x] Docker, Render blueprint, CI and setup documentation
 - [x] Live DeepSeek request with actual credentials
 - [x] Custom E2B template built; sandbox smoke test and live task verification passed.
-- [ ] Independently confirm sandbox cleanup after successful and failed runs.
+- [x] Confirmed sandbox removal after passing and failing pytest runs on 2026-09-12; E2B returned 404 for both sandbox IDs after verification.
+- [ ] Verify cleanup during infrastructure errors, worker crashes, and network failures.
 - [x] Local PostgreSQL migration completed; Redis and Celery supported the live publishing workflow.
 - [ ] Validate PostgreSQL, Redis, and Celery in a hosted deployment.
 - [x] Live GitHub App branch/PR integration
@@ -49,3 +50,4 @@ The static product preview and synthetic examples are explicitly separate from l
 - Reviewed the published diff: quantity multiplication plus two regression tests; existing assertions preserved.
 - PR remains a draft and has not been merged. Test evidence comes from RepoPilot's sandbox; no GitHub checks were recorded.
 - This is one successful demo, not a measured reliability benchmark. Production deployment and broader evaluations remain pending.
+
