@@ -10,10 +10,62 @@ type Task = {id: string; title: string; description: string; status: string; rep
 const API = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '');
 let csrf = '';
 async function request(path: string, init: RequestInit = {}) {
-  if (!API) throw new Error('This preview is read-only. Connect the Django API to run tasks.');
-  const res = await fetch(API + path, {...init, credentials:'include', headers:{'Content-Type':'application/json', 'X-CSRFToken':csrf, ...init.headers}});
-  const data = await res.json(); if (!res.ok) throw new Error(data.detail || 'The request could not be completed.'); return data;
+  if (!API) {
+    throw new Error(
+      'This preview is read-only. Connect the Django API to run tasks.'
+    );
+  }
+
+  let res: Response;
+  try {
+    res = await fetch(API + path, {
+      ...init,
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrf,
+        ...init.headers,
+      },
+    });
+  } catch {
+    throw new Error(
+      'Could not reach the server. Check your connection and that the backend is running. Refresh the task status before repeating an action.'
+    );
+  }
+
+  if (res.status >= 500) {
+    throw new Error(
+      `The server could not complete the request (HTTP ${res.status}). Refresh the task status before repeating an action.`
+    );
+  }
+
+  if (res.status === 204) return {};
+
+  let data;
+  try {
+    data = await res.json();
+  } catch {
+    throw new Error(
+      `The server returned an unreadable response (HTTP ${res.status}). Refresh the task status before repeating an action.`
+    );
+  }
+
+  if (!res.ok) {
+    const detail =
+      data && typeof data.detail === 'string'
+        ? data.detail.trim()
+        : '';
+
+    throw new Error(
+      detail
+        ? `${detail} (HTTP ${res.status})`
+        : `The request could not be completed (HTTP ${res.status}).`
+    );
+  }
+
+  return data;
 }
+
 const demo: Task = {
   id:'example-coupon', title:'Fix duplicate coupon redemption', description:'A customer can redeem the same coupon more than once. Return a clear error when a coupon has already been redeemed, and add a regression test for repeat redemption.', status:'AWAITING_APPROVAL', repository:{id:'example', full_name:'repopilot-examples/coupon-service'}, base_sha:'b41e7a2',
   plan:['Locate the redemption flow and existing tests','Add a guard for previously redeemed coupons','Add a regression test for repeat redemption','Run verification and inspect the final diff'], summary:'Reject a second redemption before updating the coupon. Cover the original behavior and the duplicate redemption case.', limitation:'Illustrative example only. These changes and test results were not produced by a live agent run. Concurrency behavior is outside this example.',
@@ -31,7 +83,7 @@ export default function Workspace(){
  useEffect(()=>{if(!dialog)return;const prior=document.activeElement as HTMLElement|null;const modal=document.querySelector<HTMLElement>('[role=dialog]');const focusable=()=>Array.from(modal?.querySelectorAll<HTMLElement>('button:not(:disabled),input,select,textarea,a[href]')||[]);focusable()[0]?.focus();const key=(e:KeyboardEvent)=>{if(e.key==='Escape')setDialog('');if(e.key==='Tab'){const a=focusable();const first=a[0],last=a[a.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus()}}};document.addEventListener('keydown',key);return ()=>{document.removeEventListener('keydown',key);prior?.focus()}},[dialog]);
  useEffect(()=>{const ctx=(document as Document & {modelContext?:{registerTool:(t:unknown,o:{signal:AbortSignal})=>unknown}}).modelContext;if(!ctx)return;const life=new AbortController();Promise.resolve().then(()=>ctx.registerTool({name:'inspect_current_task',description:'Read the task currently visible in RepoPilot. Illustrative tasks are explicitly marked.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true,untrustedContentHint:true},execute:(input:unknown)=>{if(!input||typeof input!=='object'||Object.keys(input).length)throw new Error('Expected an empty object');return {id:task.id,title:task.title,status:task.status,illustrative:!!task.is_demo,summary:task.summary}}},{signal:life.signal})).catch(()=>{});return()=>life.abort()},[task]);
  async function refresh(){const [t,r]=await Promise.all([request('/tasks/'),request('/repositories/')]);setTasks(t);setRepos(r)}
- useEffect(()=>{if(API) request('/auth/session/').then(d=>{csrf=d.csrf_token;setUser(d.username||'');if(d.username)refresh()}).catch(e=>setError(e.message))},[]);
+ useEffect(()=>{if(API) request('/auth/session/').then(d=>{csrf=d.csrf_token;setUser(d.username||'');if(d.username)return refresh()}).catch(e=>setError(e.message))},[]);
  useEffect(()=>{if(task.is_demo || !activeStates.includes(task.status))return; const t=setInterval(()=>request('/tasks/'+task.id+'/').then(setTask).catch(e=>setError(e.message)),2000);return ()=>clearInterval(t)},[task.id,task.status,task.is_demo]);
  async function action(path:string, body:object={}){setError('');setBusy(true);try{const data=await request(path,{method:'POST',body:JSON.stringify(body)});if(data.id)setTask(data);await refresh();return data}catch(e){setError((e as Error).message)}finally{setBusy(false)}}
  async function submit(e:React.FormEvent<HTMLFormElement>){e.preventDefault();const f=new FormData(e.currentTarget);setError('');setBusy(true);try{
