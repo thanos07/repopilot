@@ -1,0 +1,17 @@
+{
+  "mode": "live synthetic evaluation",
+  "cases": [
+    {
+      "case": "average-empty",
+      "accepted": true,
+      "error": "",
+      "iterations": 8,
+      "tool_calls": 11,
+      "api_cost_estimate": "0.00184100",
+      "latency_seconds": 28.707987
+    }
+  ],
+  "acceptance_rate": 1.0,
+  "api_cost_per_accepted_task": 0.001841,
+  "sandbox_cost_included": false
+}
