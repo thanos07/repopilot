@@ -1,5 +1,5 @@
 from django.db import transaction
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, PermissionDenied
 from .models import CodingTask, TaskEvent, ReviewDecision
 
 TRANSITIONS = {
@@ -21,10 +21,11 @@ def transition(task_id, state, message=''):
 
 @transaction.atomic
 def approve(task_id, user, digest):
+    if not user.is_active or not user.is_staff:raise PermissionDenied("Only the operator can approve patches.")
     t=CodingTask.objects.select_for_update().get(pk=task_id,owner=user)
     p=t.patches.order_by('-created_at').first()
     if not p or p.digest!=digest or p.base_sha!=t.base_sha:raise ValidationError('The patch changed. Refresh and review it again.')
     if t.status!='AWAITING_APPROVAL':raise ValidationError('This task is not awaiting approval.')
-    if not t.tests.filter(phase='final',patch_digest=p.digest,status='passed').exists():raise ValidationError('Passing final verification is required for this exact patch.')
+    if not t.tests.filter(phase='final',patch_digest=p.digest,status='passed',exit_code=0).exists():raise ValidationError('Passing final verification is required for this exact patch.')
     ReviewDecision.objects.create(task=t,patch=p,reviewer=user)
     return transition(t.id,'APPROVED','Human approved the exact patch.')

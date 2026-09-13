@@ -44,13 +44,16 @@ def snapshot(name,sha):
         for m in archive:
             members+=1
             if members>3000:raise GitHubError('Repository has too many archive entries.')
-            parts=PurePosixPath(m.name).parts[1:]
+            full_path=PurePosixPath(m.name)
+            if full_path.is_absolute() or '\\' in m.name or '..' in full_path.parts or m.issym() or m.islnk():
+                raise GitHubError('Unsafe archive path or link.')
+            parts=full_path.parts[1:]
             if not parts:continue
             if '..' in parts or m.issym() or m.islnk():raise GitHubError('Symlinks and unsafe archive paths are unsupported.')
             if not m.isfile():continue
             if m.size>250_000:raise GitHubError('A repository file exceeds the 250 KB MVP limit.')
             total+=m.size
-            if total>5_000_000 or len(files)>1000:raise GitHubError('Repository exceeds the MVP size limit.')
+            if total>5_000_000 or len(files)>=1000:raise GitHubError('Repository exceeds the MVP size limit.')
             if any(x in {'.git','node_modules','.venv','__pycache__'} or x.startswith('.env') for x in parts):continue
             if parts[-1].endswith(('.pem','.key','.p12')):continue
             path='/'.join(parts)

@@ -8,7 +8,10 @@ def publish(task_id):
     with transaction.atomic():
         task=CodingTask.objects.select_for_update().select_related('repository').get(pk=task_id)
         if task.status!='PUBLISHING':return
+        if not task.owner.is_active or not task.owner.is_staff:raise GitHubError('Operator access is required.')
         patch=task.patches.order_by('-created_at').first()
+        if not patch or patch.base_sha!=task.base_sha:raise GitHubError('Patch base mismatch.')
+        if not task.tests.filter(phase='final',patch_digest=patch.digest,status='passed',exit_code=0).exists():raise GitHubError('Passing final verification is required.')
         if not task.reviews.filter(patch=patch,decision='APPROVED').exists():raise GitHubError('Exact patch approval missing.')
         publication,_=PullRequestPublication.objects.get_or_create(task=task,defaults={'patch':patch,'branch':'repopilot/'+str(task.id)[:8]+'-'+patch.digest[:8]})
         if publication.patch_id!=patch.id:raise GitHubError('Publication approval mismatch.')
