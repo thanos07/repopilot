@@ -102,3 +102,81 @@ html[data-theme="light"] .activity{background:#fffdf84d;backdrop-filter:blur(20p
 @supports not (backdrop-filter:blur(1px)){html[data-theme] .sidebar,html[data-theme] .topbar,html[data-theme] .landing-nav,html[data-theme] .plan-card,html[data-theme] .activity{background:var(--surface)}}
 @media(prefers-reduced-transparency:reduce){html[data-theme] .sidebar,html[data-theme] .topbar,html[data-theme] .landing-nav,html[data-theme] .plan-card,html[data-theme] .activity,html[data-theme] .showcase{background:var(--surface)!important;backdrop-filter:none!important}}
 .guide-callout{border:1px solid var(--line);background:var(--soft);padding:22px;border-radius:14px;margin:25px 0}.guide-callout p{margin-top:8px}.guide-quicklinks{display:flex;flex-wrap:wrap;gap:12px;margin:20px 0}.guide-quicklinks a{font-size:13px;padding:9px 12px;border:1px solid var(--line);border-radius:8px;color:var(--text)}.guide-table-wrap{overflow-x:auto;margin:22px 0;border:1px solid var(--line);border-radius:10px}.guide-table-wrap table{border-collapse:collapse;width:100%;min-width:530px;font-size:14px}.guide-table-wrap th{text-align:left;background:var(--soft);padding:14px;font-weight:600}.guide-table-wrap td{padding:14px;border-top:1px solid var(--line);vertical-align:top;line-height:1.8;color:var(--muted)}.guide-table-wrap td:first-child{color:var(--text);min-width:150px}.guide-article section>p>a,.modal .muted a{text-decoration:underline;color:var(--blue)}.guide-article code{overflow-wrap:anywhere}
+
+/* Keep the navbar spacing inside the landing background. */
+.landing {
+  display: flow-root;
+}
+
+/* Balance the workspace columns on larger screens. */
+@media (min-width: 1200px) {
+  .app {
+    grid-template-columns: clamp(290px, 17vw, 330px) minmax(0, 1fr);
+  }
+
+  .app > .sidebar {
+    width: 100%;
+  }
+
+  .app.sidebar-collapsed {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .workspace-body:not(.wide) {
+    grid-template-columns: minmax(0, 1fr) clamp(340px, 26vw, 460px);
+  }
+
+  .task-content {
+    padding: 32px;
+  }
+
+  .activity {
+    padding: 32px 28px;
+  }
+}
+
+/* Workspace logo: readable in both themes. */
+.sidebar .brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sidebar .workspace-logo {
+  display: block;
+  width: 170px;
+  max-width: 75%;
+  height: auto;
+}
+
+.sidebar .workspace-logo-light {
+  display: none;
+}
+
+html[data-theme="light"] .sidebar .workspace-logo-light {
+  display: block;
+}
+
+html[data-theme="light"] .sidebar .workspace-logo-dark {
+  display: none;
+}
+
+/* Give changed-file rows room to breathe. */
+.task-content .file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.task-content .file-list > button {
+  min-height: 56px;
+  padding: 16px 18px;
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+}

@@ -1,0 +1,12 @@
+/* Homepage brand assets; preserve existing navigation and theme styles. */
+.landing-brand .brand-logo{width:170px;height:auto;display:block;flex-shrink:0}
+.landing-brand .brand-logo-light{display:none}
+html[data-theme="light"] .landing-brand .brand-logo-light{display:block}
+html[data-theme="light"] .landing-brand .brand-logo-dark{display:none}
+.hero-layout{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:32px;align-items:center}
+.hero-layout .hero-copy{min-width:0}
+.hero-layout h1{font-size:clamp(48px,5vw,68px);letter-spacing:-2.5px}
+.hero-art{min-width:0;position:relative}
+.hero-art img{display:block;width:100%;height:auto;filter:drop-shadow(0 18px 36px #0002)}
+@media(max-width:950px){.hero-layout{grid-template-columns:1fr;gap:28px}.hero-art{max-width:620px;width:100%;margin-inline:auto}.hero-layout h1{font-size:clamp(48px,8vw,72px)}}
+@media(max-width:540px){.landing-nav .landing-brand .brand-logo{width:112px}.hero-layout h1{font-size:clamp(40px,10vw,55px);letter-spacing:-1.8px}.hero-layout{gap:20px}.hero-footnote{align-items:flex-start}.hero-footnote svg{flex-shrink:0}}
