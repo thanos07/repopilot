@@ -1,3 +1,4 @@
+from urllib.parse import urlsplit
 import time
 from decimal import Decimal
 from django.conf import settings
@@ -30,7 +31,7 @@ class Provider:
         try:
             kwargs={'model':settings.AI_MODEL,'messages':messages,'tools':tools,'max_tokens':settings.AI_MAX_OUTPUT_TOKENS}
             # V1 explicitly disables thinking; no private reasoning is stored or shown.
-            if 'deepseek.com' in settings.AI_BASE_URL:kwargs['extra_body']={'thinking':{'type':'disabled'}}
+            if urlsplit(settings.AI_BASE_URL).hostname == 'api.deepseek.com':kwargs['extra_body']={'thinking':{'type':'disabled'}}
             r=self.client.chat.completions.create(**kwargs)
         except Exception as exc:raise ProviderError('Model request failed ('+type(exc).__name__+'). No fallback patch was generated.') from exc
         if r.usage is None:raise ProviderError('Provider omitted usage metadata; stopping because cost cannot be accounted for.')

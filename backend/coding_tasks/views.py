@@ -20,7 +20,7 @@ class RepositoryList(APIView):
     def post(self,r):
         operator(r.user)
         try:name=repo_name(r.data.get('url',''));data=metadata(name)
-        except GitHubError as e:raise ValidationError({'detail':str(e)})
+        except GitHubError:raise ValidationError({'detail':'Unable to add repository. Check the public GitHub repository URL and try again.'}) from None
         repo,_=Repository.objects.get_or_create(owner=r.user,github_id=data['id'],defaults={'full_name':data['full_name'],'default_branch':data['default_branch']})
         return Response(RepositorySerializer(repo).data,status=201)
 
