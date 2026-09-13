@@ -18,6 +18,7 @@ def operator(user):
 class RepositoryList(APIView):
     def get(self,r):return Response(RepositorySerializer(Repository.objects.filter(owner=r.user),many=True).data)
     def post(self,r):
+        operator(r.user)
         try:name=repo_name(r.data.get('url',''));data=metadata(name)
         except GitHubError as e:raise ValidationError({'detail':str(e)})
         repo,_=Repository.objects.get_or_create(owner=r.user,github_id=data['id'],defaults={'full_name':data['full_name'],'default_branch':data['default_branch']})
@@ -26,6 +27,7 @@ class RepositoryList(APIView):
 class TaskList(APIView):
     def get(self,r):return Response(TaskSerializer(CodingTask.objects.filter(owner=r.user).select_related('repository')[:50],many=True).data)
     def post(self,r):
+        operator(r.user)
         repo=get_object_or_404(Repository,pk=r.data.get('repository_id'),owner=r.user)
         title=str(r.data.get('title','')).strip();description=str(r.data.get('description','')).strip()
         if not title or len(title)>240 or not description or len(description)>12000:raise ValidationError({'detail':'Provide a title (up to 240 characters) and description (up to 12,000 characters).'})
@@ -39,6 +41,7 @@ class TaskDetail(APIView):
 class TaskAction(APIView):
     def post(self,r,pk,action):
         t=task_for(r.user,pk)
+        operator(r.user)
         if action=='approve':t=approve(t.id,r.user,r.data.get('digest',''))
         elif action=='cancel':
             with transaction.atomic():

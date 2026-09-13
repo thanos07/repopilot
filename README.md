@@ -214,3 +214,7 @@ Recruiter explanation: “I designed RepoPilot to operate within a student budge
 
 See [PROGRESS.md](PROGRESS.md) for the checklist and the [merged pull requests](https://github.com/thanos07/repopilot/pulls?q=is%3Apr+is%3Amerged) for incremental changes, reviews, and CI results.
 
+## Security configuration
+
+See [SECURITY.md](SECURITY.md) for vulnerability reporting and supported scope.
+See [security configuration](docs/security-configuration.md) for HTTPS settings, repository scanning, and private operator deployment guidance.

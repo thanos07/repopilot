@@ -13,7 +13,7 @@ if not SECRET_KEY:
     SECRET_KEY = 'local-only-repopilot-development'
 ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1,testserver').split(',')
 INSTALLED_APPS = ['django.contrib.auth', 'django.contrib.contenttypes', 'django.contrib.sessions', 'corsheaders', 'rest_framework', 'repositories', 'coding_tasks', 'execution']
-MIDDLEWARE = ['django.middleware.security.SecurityMiddleware', 'corsheaders.middleware.CorsMiddleware', 'django.contrib.sessions.middleware.SessionMiddleware', 'django.middleware.common.CommonMiddleware', 'django.middleware.csrf.CsrfViewMiddleware', 'django.contrib.auth.middleware.AuthenticationMiddleware']
+MIDDLEWARE = ['django.middleware.security.SecurityMiddleware', 'django.middleware.clickjacking.XFrameOptionsMiddleware', 'corsheaders.middleware.CorsMiddleware', 'django.contrib.sessions.middleware.SessionMiddleware', 'django.middleware.common.CommonMiddleware', 'django.middleware.csrf.CsrfViewMiddleware', 'django.contrib.auth.middleware.AuthenticationMiddleware']
 ROOT_URLCONF = 'config.urls'
 WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {'default': dj_database_url.parse(os.getenv('DATABASE_URL', f'sqlite:///{BASE_DIR / "db.sqlite3"}'), conn_max_age=0)}
@@ -35,7 +35,6 @@ CSRF_COOKIE_SECURE = not DEBUG
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
 if not DEBUG:
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SECURE_SSL_REDIRECT = True
 CELERY_BROKER_URL = os.getenv('REDIS_URL','redis://localhost:6379/0')
 CELERY_TASK_IGNORE_RESULT = True
@@ -62,3 +61,23 @@ PUBLISH_ENABLED = os.getenv('PUBLISH_ENABLED','false').lower() == 'true'
 # Cumulative recorded API estimate per local account; no automatic reset.
 AI_ACCOUNT_BUDGET = os.getenv("AI_ACCOUNT_BUDGET", "4.00")
 AI_MAX_OUTPUT_TOKENS = 2048
+
+# Fail closed on production configuration; no effect on local development.
+if not DEBUG:
+    if len(SECRET_KEY) < 50 or len(set(SECRET_KEY)) < 5 or SECRET_KEY.startswith('django-insecure-'):
+        raise RuntimeError('Production requires a strong DJANGO_SECRET_KEY of at least 50 characters.')
+    if any('*' in host or not host.strip() for host in ALLOWED_HOSTS):
+        raise RuntimeError('Set explicit DJANGO_ALLOWED_HOSTS without wildcards.')
+    from urllib.parse import urlsplit
+    for origin in CORS_ALLOWED_ORIGINS:
+        parsed = urlsplit(origin)
+        if '*' in origin or parsed.scheme != 'https' or not parsed.netloc or parsed.username or parsed.password or parsed.path or parsed.query or parsed.fragment:
+            raise RuntimeError('Production FRONTEND_ORIGINS must be explicit HTTPS origins.')
+SECURE_REFERRER_POLICY = 'same-origin'
+SECURE_HSTS_SECONDS = 0 if DEBUG else int(os.getenv('SECURE_HSTS_SECONDS', '0'))
+if SECURE_HSTS_SECONDS < 0:
+    raise RuntimeError('SECURE_HSTS_SECONDS cannot be negative.')
+SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG and os.getenv('SECURE_HSTS_INCLUDE_SUBDOMAINS', 'false').lower() == 'true'
+SECURE_HSTS_PRELOAD = not DEBUG and os.getenv('SECURE_HSTS_PRELOAD', 'false').lower() == 'true'
+# Only trust this header if the deployment proxy strips incoming client values.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https') if not DEBUG and os.getenv('TRUST_PROXY_HTTPS', 'false').lower() == 'true' else None
