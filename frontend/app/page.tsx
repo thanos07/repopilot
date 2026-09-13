@@ -14,4 +14,3 @@ export default function Landing(){return <div className="landing">
  <section className="landing-end"><span className="landing-eyebrow">KEEP THE FINAL CALL.</span><h2>Make the next change<br/><em>one you can inspect.</em></h2><Link href="/workspace/" className="landing-primary">Explore preview <ArrowRight size={17}/></Link><p>This public release is a read-only portfolio preview. Public signup and live task execution are planned for a future update.</p></section>
  </main><footer className="landing-footer"><Link href="/" className="landing-brand"><Code2 size={20}/>RepoPilot</Link><Link href="/guide/">User guide</Link><span>Built by <a href="https://portfolio-rosy-psi-74.vercel.app/" target="_blank" rel="noreferrer">Md Noor <ArrowUpRight size={13}/></a></span><a href="https://github.com/thanos07/repopilot" target="_blank" rel="noreferrer">View source <ArrowUpRight size={14}/></a></footer>
  </div>}
-
