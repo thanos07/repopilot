@@ -2,9 +2,19 @@
 
 ## Frontend
 
-Deploy `frontend/` to Vercel as a Next.js project. Build with `npm run build`, output `out`. Configure `NEXT_PUBLIC_API_URL=https://api.YOUR_DOMAIN/api` at build time to enable the backend UI. Rebuild when that value changes. With no value, the frontend is the read-only illustrative preview.
+Deploy `frontend/` to Vercel as a Next.js project.
 
-Host the app and API on same-site custom subdomains (for example `app.example.com` and `api.example.com`) for the session-cookie design. Unrelated `vercel.app` and `onrender.com` domains can be blocked by browser cross-site cookie policies. Do not work around this by storing refresh tokens in localStorage. Alternatively add a reviewed same-origin API proxy in a non-static frontend deployment.
+The public Vercel deployment is intentionally configured as a disconnected, read-only portfolio preview. `next.config.ts` detects the Vercel environment and disables the backend API connection automatically.
+
+Build command: `npm run build`
+
+Static export output: `out`
+
+The public deployment does not require DeepSeek, E2B, PostgreSQL, Redis, or GitHub App credentials.
+
+Live operator execution should be run separately in a trusted development or private deployment environment.
+
+If a future live operator frontend is deployed, host the frontend and API on same-site custom subdomains, for example `app.example.com` and `api.example.com`, to preserve the session-cookie design. Avoid relying on unrelated `vercel.app` and backend-provider domains for authenticated production use because browser cross-site cookie policies may interfere. Do not move refresh/session credentials into `localStorage` as a workaround.
 
 ## Django and worker
 
