@@ -4,16 +4,16 @@ A cost-aware coding-agent workspace for small Python repositories. Inspect a pla
 
 ## Verified demo
 
-RepoPilot completed a small shopping-cart bug fix, ran verification, captured human approval, and published [demo draft PR #1](https://github.com/mdtnoor/repopilot-demo/pull/1) through its GitHub App.
+RepoPilot completed a small shopping-cart bug fix, ran verification, captured human approval, and published [demo draft PR #2](https://github.com/mdtnoor/repopilot-demo/pull/2) through its GitHub App.
 
 | Evidence | Observed result |
 | --- | --- |
 | Bug | Cart totals ignored item quantities |
-| Proposed change | Multiply integer-cent prices by quantities; add regression coverage |
+| Proposed change | Multiply each integer-cent price by quantity; existing tests already covered the requested cases |
 | Baseline tests | 2 passed, 2 failed |
-| Final tests reported by the sandbox | 6 passed |
-| Published patch | 2 files changed; 1 commit |
-| Recorded model cost estimate | Approximately $0.00215; E2B charges excluded |
+| Final tests reported by the sandbox | 4 passed |
+| Published patch | 1 file changed; 1 addition, 1 deletion; 1 commit |
+| Recorded model cost estimate | $0.00152340; E2B charges excluded |
 | Approval | Bound to the exact patch and base commit |
 | Sandbox cleanup | Passing and failing pytest runs both followed by E2B 404 responses for their sandbox IDs |
 
@@ -39,7 +39,7 @@ The model selects from a bounded tool registry. The controller applies edits, ch
 
 ## Current status
 
-Working local prototype with a verified end-to-end demo. Hosted deployment and broader reliability evaluation remain pending.
+Working prototype with a verified end-to-end demo and a deployed read-only Vercel portfolio preview. Live execution remains private and on-demand; broader reliability evaluation remains pending.
 
 | Capability | Status |
 | --- | --- |
@@ -59,6 +59,39 @@ Working local prototype with a verified end-to-end demo. Hosted deployment and b
 | Public multi-user arbitrary execution | Not enabled; v1 live runs/publishing require a staff operator |
 
 No fallback returns a pretend successful patch when a live call fails. No tool can merge, force-push, or run an arbitrary shell command.
+
+## On-demand interview demo with GitHub Codespaces
+
+The live interview demo runs inside a GitHub Codespace while the browser accesses it through private GitHub CLI localhost forwarding. The Codespace performs the compute; the Windows machine provides the authenticated CLI connection and browser.
+
+Inside the Codespace:
+
+```bash
+cd /workspaces/repopilot
+./scripts/interview-start.sh
+```
+
+On Windows, keep this command running in its own terminal:
+
+```powershell
+gh codespace ports forward 3000:3000 8000:8000 -c YOUR_CODESPACE_NAME
+```
+
+Then open:
+
+```text
+http://127.0.0.1:3000/workspace/
+```
+
+Public `*.app.github.dev` port URLs are not required. Ports 3000 and 8000 remain private and are carried through the authenticated GitHub CLI tunnel.
+
+After the demo:
+
+```bash
+./scripts/interview-stop.sh
+```
+
+Then press `Ctrl+C` in the Windows tunnel terminal and stop the Codespace when it is no longer needed.
 
 ## Daily startup on Windows and WSL
 
@@ -208,7 +241,7 @@ Use the local scripted tests and synthetic fixture checks during development; th
 
 To update an existing local installation, run `python backend/manage.py migrate` and restart the API and worker. The migration changes defaults for new tasks; existing tasks retain their recorded limits. Create a fresh task to use the student defaults. Add `AI_ACCOUNT_BUDGET=4.00` to your backend environment (it also defaults to 4.00 when omitted). Keep your existing credentials and database.
 
-Recruiter explanation: “I designed RepoPilot to operate within a student budget. It checks an estimated token allowance before each model call, enforces a five-cent task limit and a cumulative account limit, and bounds both tool calls and verification attempts. It persists patches and usage so a budget stop is inspectable. Reducing cost does not bypass final tests or human approval. These controls are implemented and tested locally; the first small demo recorded about $0.00215 in estimated model usage, excluding sandbox charges. Broader cost and reliability measurements remain pending.”
+Recruiter explanation: “I designed RepoPilot to operate within a student budget. It checks an estimated token allowance before each model call, enforces a five-cent task limit and a cumulative account limit, and bounds both tool calls and verification attempts. It persists patches and usage so a budget stop is inspectable. Reducing cost does not bypass final tests or human approval. These controls are implemented and tested locally; the verified shopping-cart demo recorded $0.00152340 in estimated model usage, excluding sandbox charges. Broader cost and reliability measurements remain pending.”
 
 ## Development history
 
