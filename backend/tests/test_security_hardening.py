@@ -101,3 +101,11 @@ def test_production_configuration_fails_closed(variable,value):
     env[variable]=value
     result=subprocess.run([sys.executable,'-c','import config.settings'],env=env,capture_output=True,text=True)
     assert result.returncode!=0 and 'RuntimeError' in result.stderr
+
+def test_browser_accept_header_uses_json_renderer(db):
+    response = Client().get(
+        '/api/auth/session/',
+        HTTP_ACCEPT='text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    )
+    assert response.status_code == 200
+    assert response['Content-Type'].startswith('application/json')
