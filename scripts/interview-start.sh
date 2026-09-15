@@ -153,6 +153,18 @@ echo "      Frontend API: http://127.0.0.1:8000/api"
 
 echo "[5/9] Starting backend stack..."
 
+echo "      Building current API/worker images..."
+
+if ! docker compose build api worker; then
+    echo "      Initial Docker build failed. Restarting Docker and retrying..."
+    sudo service docker restart >/dev/null 2>&1 || true
+    sleep 2
+    sudo iptables-legacy -P FORWARD ACCEPT 2>/dev/null || true
+    docker compose build api worker
+fi
+
+echo "      Backend images: current"
+
 start_stack() {
     docker compose up -d database redis api worker
 }
@@ -199,6 +211,10 @@ docker compose up -d \
     api worker
 
 echo "      Backend containers: started"
+
+echo "      Applying database migrations..."
+docker compose exec -T api python manage.py migrate --noinput
+echo "      Database migrations: OK"
 
 
 echo "[6/9] Waiting for Django API..."
